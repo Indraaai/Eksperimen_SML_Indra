@@ -1,0 +1,80 @@
+name: Data Preprocessing Workflow
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'diabetes_prediction_dataset_raw/data.csv'
+      - 'preprocessing/automate_Indra.py'
+  workflow_dispatch:
+
+jobs:
+  preprocess-data:
+    name: Run Data Preprocessing
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run Preprocessing Script
+        run: |
+          cd preprocessing
+          python automate_Indra.py
+      
+      - name: Verify Output
+        run: |
+          if [ -f "preprocessing/data_clean.csv" ]; then
+            echo "✓ data_clean.csv generated successfully"
+            head -n 5 preprocessing/data_clean.csv
+          else
+            echo "✗ data_clean.csv not found"
+            exit 1
+          fi
+      
+      - name: Commit and Push Results
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add preprocessing/data_clean.csv
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto: Update preprocessed data [skip ci]"
+            git push
+          fi
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: preprocessed-data-${{ github.run_number }}
+          path: preprocessing/data_clean.csv
+          retention-days: 30
+      
+      - name: Generate Summary
+        run: |
+          echo "## Preprocessing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** Completed" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Run:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "preprocessing/data_clean.csv" ]; then
+            echo "**File:** data_clean.csv" >> $GITHUB_STEP_SUMMARY
+            echo "**Size:** $(wc -c < preprocessing/data_clean.csv) bytes" >> $GITHUB_STEP_SUMMARY
+            echo "**Rows:** $(wc -l < preprocessing/data_clean.csv)" >> $GITHUB_STEP_SUMMARY
+          fi

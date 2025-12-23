@@ -26,6 +26,28 @@ def load_data(file_path):
     return df
 
 
+def check_missing_values(df):
+    """
+    Cek missing values dalam dataset
+    
+    Parameters:
+    -----------
+    df : DataFrame
+        Dataset asli
+        
+    Returns:
+    --------
+    df : DataFrame
+        Dataset (tidak diubah, hanya untuk konsistensi)
+    """
+    missing = df.isnull().sum()
+    print("Missing values per kolom:")
+    print(missing)
+    total_missing = missing.sum()
+    print(f"\nTotal missing values: {total_missing}")
+    return df
+
+
 def remove_duplicates(df):
     """
     Menghapus data duplikat
@@ -204,15 +226,19 @@ def preprocess_data(file_path, test_size=0.2, random_state=42, save_clean=False)
     print("="*60)
     
     # 1. Load data
-    print("\n[Step 1/6] Loading data...")
+    print("\n[Step 1/7] Loading data...")
     df = load_data(file_path)
     
-    # 2. Remove duplicates
-    print("\n[Step 2/6] Removing duplicates...")
+    # 2. Check missing values
+    print("\n[Step 2/7] Checking missing values...")
+    df = check_missing_values(df)
+    
+    # 3. Remove duplicates
+    print("\n[Step 3/7] Removing duplicates...")
     df_clean = remove_duplicates(df)
     
-    # 3. Encode categorical
-    print("\n[Step 3/6] Encoding categorical features...")
+    # 4. Encode categorical
+    print("\n[Step 4/7] Encoding categorical features...")
     df_clean, le_gender, le_smoking = encode_categorical(df_clean)
     
     # Save clean data if requested
@@ -221,16 +247,16 @@ def preprocess_data(file_path, test_size=0.2, random_state=42, save_clean=False)
         df_clean.to_csv(clean_path, index=False)
         print(f"\nClean data saved to: {clean_path}")
     
-    # 4. Split features and target
-    print("\n[Step 4/6] Splitting features and target...")
+    # 5. Split features and target
+    print("\n[Step 5/7] Splitting features and target...")
     X, y = split_features_target(df_clean)
     
-    # 5. Split train and test
-    print("\n[Step 5/6] Splitting train and test...")
+    # 6. Split train and test
+    print("\n[Step 6/7] Splitting train and test...")
     X_train, X_test, y_train, y_test = split_train_test(X, y, test_size, random_state)
     
-    # 6. Scale features
-    print("\n[Step 6/6] Scaling features...")
+    # 7. Scale features
+    print("\n[Step 7/7] Scaling features...")
     X_train_scaled, X_test_scaled, scaler = scale_features(X_train, X_test)
     
     # Print summary
